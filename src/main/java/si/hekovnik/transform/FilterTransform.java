@@ -41,23 +41,30 @@ public abstract class FilterTransform<R extends ConnectRecord<R>> implements Tra
         if (fieldValue == null) {
             throw new IllegalArgumentException("There is no field or value for the given field name: " + config.getField() + " " + config.getSecondField());
         } else if (fieldValue instanceof List) {
-            if (((List) fieldValue).contains(config.getFieldValue())) {
-                return newRecord(record, value);
+            for (String filterField : config.getFieldValues()) {
+                if (((List) fieldValue).contains(filterField)) {
+                    return newRecord(record, value);
+                }
             }
         } else if (fieldValue instanceof String) {
-            if (fieldValue.equals(config.getFieldValue())) {
-                return newRecord(record, value);
+            for (String filterField : config.getFieldValues()) {
+                if (fieldValue.equals(filterField)) {
+                    return newRecord(record, value);
+                }
             }
         } else if (fieldValue instanceof Integer) {
-            if (fieldValue.toString().equals(config.getFieldValue())) {
-                return newRecord(record, value);
+            for (String filterField : config.getFieldValues()) {
+                if (fieldValue.toString().equals(filterField)) {
+                    return newRecord(record, value);
+                }
             }
         } else if (fieldValue instanceof Long) {
-            if ((fieldValue.toString().replace("L", "")).equals(config.getFieldValue())) {
-                return newRecord(record, value);
+            for (String filterField : config.getFieldValues()) {
+                if ((fieldValue.toString().replace("L", "")).equals(filterField)) {
+                    return newRecord(record, value);
+                }
             }
         }
-
         //otherwise we return null
         return newRecord(record, null);
     }
@@ -71,7 +78,7 @@ public abstract class FilterTransform<R extends ConnectRecord<R>> implements Tra
             //check if the defined field contains the specified value
             if (field.name().equals(config.getField())) {
                 //if it does not contain the value, we skip the record
-                if (!(value.get(field).equals(config.getFieldValue()))) {
+                if (!(value.get(field).equals(config.getFieldValues()))) {
                     return newRecord(record, null);
                 }
             }

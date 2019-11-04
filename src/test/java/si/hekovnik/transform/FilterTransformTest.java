@@ -3,7 +3,6 @@ package si.hekovnik.transform;
 
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.source.SourceRecord;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import si.hekovnik.utils.JsonConverter;
@@ -16,19 +15,29 @@ import java.util.Map;
 
 public class FilterTransformTest {
 
+    private Map<String, Object> getConfig (String fieldConfig, List<String> fieldValues){
+        //define the configuration
+        Map<String, Object> config = new HashMap<>();
+        config.put(FilterTransformConfig.FIELD_CONFIG, fieldConfig);
+
+        config.put(FilterTransformConfig.FIELD_VALUES, fieldValues);
+
+        return config;
+    }
 
     @Test
     //returns the the whole message because the condition stands, filter value is a list
     public void filterValueTrue() throws IOException {
-        //define the configuration
-        Map<String, String> config = new HashMap<>();
-        config.put(FilterTransformConfig.FIELD_CONFIG, "payload.after.labels");
-        config.put(FilterTransformConfig.FIELD_VALUE, "Kg");
-
         //define value
         String json = "{\"meta\":{\"timestamp\":1572361327791,\"username\":\"neo4j\",\"txId\":17,\"txEventId\":0,\"txEventsCount\":1,\"operation\":\"created\",\"source\":{\"hostname\":\"neo\"}},\"payload\":{\"id\":\"20\",\"before\":null,\"after\":{\"properties\":{\"name\":\"123abc123\"},\"labels\":[\"Kg\"]},\"type\":\"node\"},\"schema\":{\"properties\":{\"name\":\"String\"},\"constraints\":[]}}";
         Map<String, Object> map = JsonConverter.jsonStringToMap(json);
 
+        //define config
+        String fieldConfig = "payload.after.labels";
+        List<String> labels = new ArrayList<>();
+        labels.add("Kg");
+        labels.add("App");
+        Map<String, Object> config = getConfig(fieldConfig, labels);
 
         //define the FilterTransform
         FilterTransform<SourceRecord> filterValue = new FilterTransform.Value<SourceRecord>();
@@ -46,10 +55,11 @@ public class FilterTransformTest {
     @Test
     //returns null because the condition is false (the field does not contain the given value)
     public void filterValueFalse() throws IOException {
-        //define the configuration
-        Map<String, String> config = new HashMap<>();
-        config.put(FilterTransformConfig.FIELD_CONFIG, "payload.after.labels");
-        config.put(FilterTransformConfig.FIELD_VALUE, "Not Kg");
+        //define config
+        String fieldConfig = "payload.after.labels";
+        List<String> labels = new ArrayList<>();
+        labels.add("App");
+        Map<String, Object> config = getConfig(fieldConfig, labels);
 
         //define value
         String json = "{\"meta\":{\"timestamp\":1572361327791,\"username\":\"neo4j\",\"txId\":17,\"txEventId\":0,\"txEventsCount\":1,\"operation\":\"created\",\"source\":{\"hostname\":\"neo\"}},\"payload\":{\"id\":\"20\",\"before\":null,\"after\":{\"properties\":{\"name\":\"123abc123\"},\"labels\":[\"Kg\"]},\"type\":\"node\"},\"schema\":{\"properties\":{\"name\":\"String\"},\"constraints\":[]}}";
@@ -67,10 +77,10 @@ public class FilterTransformTest {
     //returns exception since the given field does not exist
     public void noGivenFilter() throws IOException {
         //define the configuration
-        Map<String, String> config = new HashMap<>();
-        config.put(FilterTransformConfig.FIELD_CONFIG, "payload.false");
-        config.put(FilterTransformConfig.FIELD_VALUE, "Kg");
-
+        String fieldConfig = "payload.after.what";
+        List<String> labels = new ArrayList<>();
+        labels.add("Kg");
+        Map<String, Object> config = getConfig(fieldConfig, labels);
         //define value
         String json = "{\"meta\":{\"timestamp\":1572361327791,\"username\":\"neo4j\",\"txId\":17,\"txEventId\":0,\"txEventsCount\":1,\"operation\":\"created\",\"source\":{\"hostname\":\"neo\"}},\"payload\":{\"id\":\"20\",\"before\":null,\"after\":{\"properties\":{\"name\":\"123abc123\"},\"labels\":[\"Kg\"]},\"type\":\"node\"},\"schema\":{\"properties\":{\"name\":\"String\"},\"constraints\":[]}}";
         Map<String, Object> map = JsonConverter.jsonStringToMap(json);
@@ -90,9 +100,11 @@ public class FilterTransformTest {
     //throws and exceptions because the input is not an array
     public void convertToMapTest() {
         //define the configuration
-        Map<String, String> config = new HashMap<>();
-        config.put(FilterTransformConfig.FIELD_CONFIG, "payload.after.labels");
-        config.put(FilterTransformConfig.FIELD_VALUE, "Not Kg");
+        String fieldConfig = "payload.after.labels";
+        List<String> labels = new ArrayList<>();
+        labels.add("Kg");
+        labels.add("App");
+        Map<String, Object> config = getConfig(fieldConfig, labels);
 
 
         List<String> falseArray = new ArrayList<>();
@@ -115,7 +127,7 @@ public class FilterTransformTest {
         //define the configuration
         Map<String, String> config = new HashMap<>();
         config.put(FilterTransformConfig.FIELD_CONFIG, "meta.username");
-        config.put(FilterTransformConfig.FIELD_VALUE, "neo4j");
+        config.put(FilterTransformConfig.FIELD_VALUES, "neo4j");
 
         //define value
         String json = "{\"meta\":{\"timestamp\":1572361327791,\"username\":\"neo4j\",\"txId\":17,\"txEventId\":0,\"txEventsCount\":1,\"operation\":\"created\",\"source\":{\"hostname\":\"neo\"}},\"payload\":{\"id\":\"20\",\"before\":null,\"after\":{\"properties\":{\"name\":\"123abc123\"},\"labels\":[\"Kg\"]},\"type\":\"node\"},\"schema\":{\"properties\":{\"name\":\"String\"},\"constraints\":[]}}";
@@ -140,7 +152,7 @@ public class FilterTransformTest {
         //define the configuration
         Map<String, String> config = new HashMap<>();
         config.put(FilterTransformConfig.FIELD_CONFIG, "meta.txId");
-        config.put(FilterTransformConfig.FIELD_VALUE, "17");
+        config.put(FilterTransformConfig.FIELD_VALUES, "17");
 
         //define value
         String json = "{\"meta\":{\"timestamp\":1572361327791,\"username\":\"neo4j\",\"txId\":17,\"txEventId\":0,\"txEventsCount\":1,\"operation\":\"created\",\"source\":{\"hostname\":\"neo\"}},\"payload\":{\"id\":\"20\",\"before\":null,\"after\":{\"properties\":{\"name\":\"123abc123\"},\"labels\":[\"Kg\"]},\"type\":\"node\"},\"schema\":{\"properties\":{\"name\":\"String\"},\"constraints\":[]}}";
@@ -161,7 +173,7 @@ public class FilterTransformTest {
         //define the configuration
         Map<String, String> config = new HashMap<>();
         config.put(FilterTransformConfig.FIELD_CONFIG, "meta.timestamp");
-        config.put(FilterTransformConfig.FIELD_VALUE, "1572361327791");
+        config.put(FilterTransformConfig.FIELD_VALUES, "1572361327791");
 
         //define value
         String json = "{\"meta\":{\"timestamp\":1572361327791,\"username\":\"neo4j\",\"txId\":17,\"txEventId\":0,\"txEventsCount\":1,\"operation\":\"created\",\"source\":{\"hostname\":\"neo\"}},\"payload\":{\"id\":\"20\",\"before\":null,\"after\":{\"properties\":{\"name\":\"123abc123\"},\"labels\":[\"Kg\"]},\"type\":\"node\"},\"schema\":{\"properties\":{\"name\":\"String\"},\"constraints\":[]}}";
@@ -180,7 +192,7 @@ public class FilterTransformTest {
         //define the configuration
         Map<String, String> config = new HashMap<>();
         config.put(FilterTransformConfig.FIELD_CONFIG, "lastName");
-        config.put(FilterTransformConfig.FIELD_VALUE, "LastName1");
+        config.put(FilterTransformConfig.FIELD_VALUES, "LastName1");
 
         //define value
         String json ="{\"firstName\": \"FirstName1\", \"lastName\": \"LastName1\", \"age\": 30}";
@@ -204,7 +216,7 @@ public class FilterTransformTest {
         //define the configuration
         Map<String, String> config = new HashMap<>();
         config.put(FilterTransformConfig.FIELD_CONFIG, "Person.lastName");
-        config.put(FilterTransformConfig.FIELD_VALUE, "LastName1");
+        config.put(FilterTransformConfig.FIELD_VALUES, "LastName1");
 
         //define value
         String json ="{\"Person\": {\"firstName\": \"FirstName1\", \"lastName\": \"LastName1\", \"age\": 30}}";
@@ -228,7 +240,7 @@ public class FilterTransformTest {
         //define the configuration
         Map<String, String> config = new HashMap<>();
         config.put(FilterTransformConfig.FIELD_CONFIG, "payload.after.labels");
-        config.put(FilterTransformConfig.FIELD_VALUE, "Kg");
+        config.put(FilterTransformConfig.FIELD_VALUES, "Kg");
         config.put(FilterTransformConfig.SECONDARY_FIELD_CONFIG, "payload.before.labels");
 
         //define value
