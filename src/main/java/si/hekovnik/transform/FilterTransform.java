@@ -2,7 +2,6 @@ package si.hekovnik.transform;
 
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.ConnectRecord;
-import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.DataException;
@@ -28,62 +27,38 @@ public abstract class FilterTransform<R extends ConnectRecord<R>> implements Tra
     private R applySchemaless(final R record) {
         final Map<String, Object> value = convertToMap(operatingValue(record));
 
-        //if the defined field contains the specified value we return the record
-        Object fieldValue;
+        //check if the cdc record is a node or relationship type
+        String recordType = (String) MapUtils.getField(value, FilterTransformConfig.getPayloadTypeField(), "\\.");
 
-        try {
-            fieldValue = MapUtils.getField(value, config.getField(), "\\.");
-        } catch (NullPointerException e) {
-            fieldValue = MapUtils.getField(value, config.getSecondField(), "\\.");
+        if (FilterTransformConfig.getPayloadNodeType().equals(recordType)) {
+            //record is a node type cdc
+            return handleNodeRecord(record, value);
+        } else if (FilterTransformConfig.getPayloadRelationshipType().equals(recordType)) {
+            //record is a relationship type cdc
+            return handleRelationshipRecord(record, value);
+        } else {
+            throw new IllegalArgumentException("Input record has an unknown record type or the field " + FilterTransformConfig.getPayloadTypeField() + " does not exist.");
         }
-        ;
 
-        if (fieldValue == null) {
-            throw new IllegalArgumentException("There is no field or value for the given field name: " + config.getField() + " " + config.getSecondField());
-        } else if (fieldValue instanceof List) {
-            for (String filterField : config.getFieldValues()) {
-                if (((List) fieldValue).contains(filterField)) {
-                    return newRecord(record, value);
-                }
-            }
-        } else if (fieldValue instanceof String) {
-            for (String filterField : config.getFieldValues()) {
-                if (fieldValue.equals(filterField)) {
-                    return newRecord(record, value);
-                }
-            }
-        } else if (fieldValue instanceof Integer) {
-            for (String filterField : config.getFieldValues()) {
-                if (fieldValue.toString().equals(filterField)) {
-                    return newRecord(record, value);
-                }
-            }
-        } else if (fieldValue instanceof Long) {
-            for (String filterField : config.getFieldValues()) {
-                if ((fieldValue.toString().replace("L", "")).equals(filterField)) {
-                    return newRecord(record, value);
-                }
-            }
-        }
-        //otherwise we return null
-        return newRecord(record, null);
     }
 
-    private R applyWithSchema(final R record) {
-        final Schema schema = operatingSchema(record);
-        final Struct value = convertToStruct(operatingValue(record));
 
-        final Struct updatedValue = new Struct(value.schema());
-        for (Field field : schema.fields()) {
-            //check if the defined field contains the specified value
-            if (field.name().equals(config.getField())) {
-                //if it does not contain the value, we skip the record
-                if (!(value.get(field).equals(config.getFieldValues()))) {
-                    return newRecord(record, null);
-                }
-            }
-        }
-        //we return the default record
+    private R applyWithSchema(final R record) {
+
+//        final Schema schema = operatingSchema(record);
+//        final Struct value = convertToStruct(operatingValue(record));
+//
+//        final Struct updatedValue = new Struct(value.schema());
+//        for (Field field : schema.fields()) {
+//            //check if the defined field contains the specified value
+//            if (field.name().equals(config.get)) {
+//                //if it does not contain the value, we skip the record
+//                if (!(value.get(field).equals(config.getFieldValues()))) {
+//                    return newRecord(record, null);
+//                }
+//            }
+//        }
+//        //we return the default record
         return record;
     }
 
@@ -158,4 +133,78 @@ public abstract class FilterTransform<R extends ConnectRecord<R>> implements Tra
             return record.newRecord(record.topic(), record.kafkaPartition(), record.keySchema(), record.key(), record.valueSchema(), updatedValue, record.timestamp());
         }
     }
+
+
+    private R handleNodeRecord(final R record, Map<String, Object> value) {
+        //if the defined field contains the specified value we return the record
+        Object fieldValue;
+        try {
+            fieldValue = MapUtils.getField(value, config.getNodeField(), "\\.");
+        } catch (NullPointerException e) {
+            fieldValue = MapUtils.getField(value, config.getSecondNodeField(), "\\.");
+        }
+        ;
+
+        //we check if the value of the field contains the defined labels
+        if (compareFieldValue(fieldValue)) {
+            //if it contains the desired labels we send it through
+            return newRecord(record, value);
+        } else {
+            //otherwise we return null
+            return newRecord(record, null);
+        }
+    }
+
+    ;
+
+    private R handleRelationshipRecord(final R record, Map<String, Object> value) {
+        Object startFieldValues = MapUtils.getField(value, config.getRelationStartField(), "\\.");
+        Object endFieldValues =  MapUtils.getField(value, config.getRelationEndField(), "\\.");
+
+        if (compareFieldValue(startFieldValues) && compareFieldValue(endFieldValues)) {
+            return newRecord(record, value);
+        } else {
+            return newRecord(record, null);
+        }
+
+
+    }
+
+    ;
+
+    /**
+     * @param fieldValue
+     * @return true if the input fieldValue contains the desired labels
+     */
+    private boolean compareFieldValue(Object fieldValue) {
+        if (fieldValue == null) {
+            throw new IllegalArgumentException("There is no field or value for the given field name: " + config.getNodeField() + " " + config.getSecondNodeField());
+        } else if (fieldValue instanceof List) {
+            for (String filterField : config.getLabels()) {
+                if (((List) fieldValue).contains(filterField)) {
+                    return true;
+                }
+            }
+        } else if (fieldValue instanceof String) {
+            if (config.getLabels().contains(fieldValue)) {
+                return true;
+            }
+        } else if (fieldValue instanceof Integer) {
+            if (config.getLabels().contains(fieldValue.toString())) {
+                return true;
+            }
+        } else if (fieldValue instanceof Long) {
+            if (config.getLabels().contains(fieldValue.toString().replace("L", ""))) {
+                return true;
+            }
+        } else {
+            if (config.getLabels().contains(fieldValue.toString())) {
+                return true;
+            }
+        }
+        ;
+        return false;
+    }
+
+
 }

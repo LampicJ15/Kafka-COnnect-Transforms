@@ -1,16 +1,17 @@
-# kafka-connect-transform
-
-## Single message transforms for Kafka Connect
+# Kafka Connect [SMT 4 NeoCDC]
+**Kafka single message transforms that handle the Neo4j CDC format**
 
 This is a collection of Single Message Transforms for Kafka Connect. So far it contains:
 * FilterTransform
 
 ### FilterTransform
 
-This transformer will check if the given *field* contains the given *fieldValue*. If the condition is **false** the kafka record message is filtered, otherwise nothing changes. 
+This transformer filters the incoming CDC records from Neo4j.
+It checks if the record is about a node or a relationship change and then compares the defined record fields values 
+with the given labels. It passes the record if the given field contains the given labels, otherwise it filters it (returns a `null`).
 
 #### Coniguration and parameters
-You have to add the FilterTransformer **JAR** to the *KAFKA CONNECT* plugin path (*/usr/share/kafka/plugins*).
+First you have to add the FilterTransformer **JAR** to the *KAFKA CONNECT* plugin path (*/usr/share/kafka/plugins*).
 
 Name | Description | Type | Valid values | Importance
 ---- | ----------- | ---- | ------------ | ------------
