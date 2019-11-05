@@ -1,7 +1,7 @@
 # Kafka Connect [SMT 4 NeoCDC]
 **Kafka single message transforms that handle the Neo4j CDC format**
 
-This is a collection of Single Message Transforms for Kafka Connect. So far it contains:
+This is a collection of Single Message Transforms for Kafka Connect modified to work best with the Neo4j CDC format. So far it contains:
 * FilterTransform
 
 ### FilterTransform
