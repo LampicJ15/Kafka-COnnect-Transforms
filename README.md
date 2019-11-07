@@ -75,7 +75,7 @@ In that case your connector config would look like (showing only transforms part
   "config": {
 	"transforms": "filter, nullHandler",		
 	"transforms.filter.type": "si.hekovnik.transform.FilterTransform$Value",
-	"transforms.filter.labels": ["Person"]
+	"transforms.filter.labels": "Person",
 	"transforms.nullHandler.type":"io.confluent.connect.transforms.TombstoneHandler",
 	"transforms.nullHandler.behavior": "ignore"
   }
@@ -148,7 +148,7 @@ In that case your connector config would look like (showing only transforms part
   "config": {
 	"transforms": "filter, nullHandler",		
 	"transforms.filter.type": "si.hekovnik.transform.FilterTransform$Value",
-	"transforms.filter.labels": ["Person"]
+	"transforms.filter.labels": "Person",
 	"transforms.nullHandler.type":"io.confluent.connect.transforms.TombstoneHandler",
 	"transforms.nullHandler.behavior": "ignore"
   }
