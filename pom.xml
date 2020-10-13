@@ -10,7 +10,7 @@
 
     <properties>
         <kafka.version>1.1.0</kafka.version>
-        <junit.version>4.12</junit.version>
+        <junit.version>4.13.1</junit.version>
         <java.version.source>7</java.version.source>
         <java.version.target>7</java.version.target>
     </properties>
